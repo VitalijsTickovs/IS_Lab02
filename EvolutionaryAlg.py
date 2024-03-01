@@ -19,8 +19,6 @@ class EvolutionaryAlgorithm:
                 parents_idx = self.selection_function()
                 parents = [self.population[parents_idx[0]], self.population[parents_idx[1]]]
                 children = self.crossover_function(parents[0], parents[1])
-                children.append(children[0])
-                children.append(children[1])
 
                 for j in range(len(children)):
                     children[j] = self.mutation_function(children[j])
@@ -73,6 +71,8 @@ class EvolutionaryAlgorithm:
 
     def mutation_function(self, child):
         bit = random.randrange(start=0, stop=len(child) - 1)
-        new_weight = random.random() * 10
-        new_weight = math.floor(new_weight * 100) / 100
-        child[bit] = new_weight
+        if child[bit] == 1:
+            child[bit] = 0
+        else:
+            child[bit] = 1
+        return child
