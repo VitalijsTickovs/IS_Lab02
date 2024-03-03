@@ -140,7 +140,7 @@ class KnapsackProblem:
         best_knapsack = genetic_algo.evolve(50)
         print(genetic_algo.scores)
         print(f"Best score: {genetic_algo.best_score}")
-        print(f"Best knapsack\nweight:{round(best_knapsack.get_total_weight())},\nvalue:{best_knapsack.get_total_value()}")
+        print(f"Best knapsack\nweight: {round(best_knapsack.get_total_weight())}\nvalue: {best_knapsack.get_total_value()}")
 
 
 if __name__ == "__main__":
