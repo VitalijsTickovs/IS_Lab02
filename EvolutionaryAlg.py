@@ -9,11 +9,12 @@ class EvolutionaryAlgorithm:
         self.population = population
         self.fitness_function = fitness_function
         self.scores = []
+        self.best_score = 0
 
     def evolve(self, generations):
         for iteration in range(generations):
             fitness_scores = [self.fitness_function(candidate) for candidate in self.population]
-            children = []
+            next_generation = []
 
             for i in range(0, len(self.population), 2):
                 parents_idx = self.selection_function()
@@ -22,9 +23,14 @@ class EvolutionaryAlgorithm:
 
                 for j in range(len(children)):
                     children[j] = self.mutation_function(children[j])
+                    next_generation.append(children[j])
 
-            self.population = children
+            self.population = next_generation
             self.scores.append((iteration, max(fitness_scores)))
+            self.best_score = max(max(fitness_scores), self.best_score)
+            print(f"Iteration {iteration}: Best Fitness: {max(fitness_scores)}")
+
+        return self.get_best_individual(self.population)
 
     def selection_function(self, type='roulette'):
         fitness_scores = [self.fitness_function(candidate) for candidate in self.population]
