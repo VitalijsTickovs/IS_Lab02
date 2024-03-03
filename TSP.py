@@ -35,7 +35,6 @@ class TSP:
         abs_diff = abs(angle1 - angle2)
         gamma = min(abs_diff, 360 - abs_diff) # choose an acute/straight angle
         gamma_radians = math.radians(gamma)
-        print(f"abs_angle: {abs_diff}, gamma: {gamma}")
         distance = math.sqrt(2 - 2 * math.cos(gamma_radians))  # cosines theorem
         return round(distance,2)
 
@@ -54,7 +53,7 @@ class TSP:
         return distance_matrix
 
     def generate_city_angle(self):
-        return round(random.random() * 360, 2)
+        return round(random.uniform(0,1) * 360, 2)
 
     def fitness_function(self, candidate):
         pass

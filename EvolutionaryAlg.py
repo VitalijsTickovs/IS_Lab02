@@ -11,6 +11,9 @@ class EvolutionaryAlgorithm:
         self.scores = []
         self.best_score = 0
 
+        self.crossover_probability = 1
+        self.mutation_probability = 1
+
     def evolve(self, generations):
         for iteration in range(generations):
             fitness_scores = [self.fitness_function(candidate) for candidate in self.population]
@@ -67,6 +70,9 @@ class EvolutionaryAlgorithm:
         return best_individual
 
     def crossover_function(self, parent1, parent2, type='one_point'):
+        if not self.random_check(self.crossover_probability):
+            return parent1, parent2
+
         if type == 'one_point':
             return self.one_point_crossover(parent1, parent2)
 
@@ -76,9 +82,21 @@ class EvolutionaryAlgorithm:
         return children
 
     def mutation_function(self, child):
+        if not self.random_check(self.mutation_probability):
+            return child
         bit = random.randrange(start=0, stop=len(child) - 1)
         if child[bit] == 1:
             child[bit] = 0
         else:
             child[bit] = 1
         return child
+
+    @staticmethod
+    def random_check(threshold):
+        if threshold == 1:
+            return True
+
+        random_var = random.uniform(0,1)
+        if random_var <= threshold:
+            return True
+        return False
