@@ -1,6 +1,8 @@
 import math
 import random
 
+import numpy as np
+
 
 class TSP:
 
@@ -9,6 +11,7 @@ class TSP:
         self.population_size = population_size
         self.num_generations = num_generations
         self.locations = self.generate_locations()
+        self.distance_matrix = self.build_distance_matrix()
         self.population = self.generate_population()
 
     def generate_population(self):
@@ -34,7 +37,21 @@ class TSP:
         gamma_radians = math.radians(gamma)
         print(f"abs_angle: {abs_diff}, gamma: {gamma}")
         distance = math.sqrt(2 - 2 * math.cos(gamma_radians))  # cosines theorem
-        return distance
+        return round(distance,2)
+
+    def build_distance_matrix(self):
+        """ Creates a matrix for quick distance lookups
+            Usage:
+            distance_between_cities = distance_matrix[city_index_from][city_index_to]
+        """
+
+        dimension = self.num_cities
+        distance_matrix = [[0 for x in range(dimension)] for y in range(dimension)]
+        for row in range(self.num_cities):
+            for col in range(self.num_cities):
+                distance_matrix[row][col] = self.distance(self.locations[row], self.locations[col])
+
+        return distance_matrix
 
     def generate_city_angle(self):
         return round(random.random() * 360, 2)
@@ -45,8 +62,11 @@ class TSP:
 
 if __name__ == "__main__":
     tsp = TSP(num_cities=10, population_size=10, num_generations=50)
+
+    # tests
     print(tsp.locations)
     print(tsp.population[0])
     print(tsp.distance(tsp.locations[0], tsp.locations[1]))
     print(tsp.distance(45, 330))
     print(tsp.distance(0, 180))
+    print(np.array(tsp.distance_matrix))
