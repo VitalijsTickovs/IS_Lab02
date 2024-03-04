@@ -38,6 +38,7 @@ class Knapsack:
         total_weight = 0
         for i in range(len(self.representation)):
             total_weight += self.representation[i] * self.weights[i]
+        self.total_weight = total_weight
         return total_weight
 
     def get_total_value(self):
@@ -46,6 +47,7 @@ class Knapsack:
         total_value = 0
         for i in range(len(self.representation)):
             total_value += self.representation[i] * self.values[i]
+        self.total_value = total_value
         return total_value
 
 
@@ -91,22 +93,9 @@ class KnapsackProblem:
 
     @staticmethod
     def fitness_function(knapsack):
-        representation = knapsack.representation
-        score = 0
         ratios = KnapsackProblem.count_ratios(knapsack)
-
-        for i in representation:
-            score += i * knapsack.values[i]
-
-        total_weight_in_knapsack = knapsack.get_total_weight()
-
-        while total_weight_in_knapsack > knapsack.maximum_weight:
-            penalty_idx = KnapsackProblem.penalize(ratios)
-            penalty = knapsack.values[penalty_idx]
-            # multiply by ratio to strengthen the effect of penalty
-            score -= penalty*round(ratios[penalty_idx])
-            total_weight_in_knapsack -= knapsack.weights[penalty_idx]
-            ratios[penalty_idx] = 0
+        score = knapsack.get_total_value()
+        score = KnapsackProblem.penalize(ratios, knapsack, score)
 
         if score < 0:
             score = 0
@@ -114,7 +103,20 @@ class KnapsackProblem:
         return score
 
     @staticmethod
-    def penalize(ratios):
+    def penalize(ratios, knapsack, score):
+        total_weight_in_knapsack = knapsack.get_total_weight()
+        while total_weight_in_knapsack > knapsack.maximum_weight:
+            penalty_idx = KnapsackProblem.get_idx_max(ratios)
+            penalty = knapsack.values[penalty_idx]
+            # multiply by ratio to strengthen the effect of penalty
+            score -= penalty*round(ratios[penalty_idx])
+            total_weight_in_knapsack -= knapsack.weights[penalty_idx]
+            ratios[penalty_idx] = 0
+
+        return score
+
+    @staticmethod
+    def get_idx_max(self, ratios):
         """ Finds an index of an item in the knapsack with the highest weight/value ratio
             (meaning that the item is the least useful)
         """
@@ -125,6 +127,7 @@ class KnapsackProblem:
                 maximum = ratios[i]
                 max_idx = i
         return max_idx
+
 
     @staticmethod
     def count_ratios(knapsack):
