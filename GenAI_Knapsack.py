@@ -53,6 +53,8 @@ class Knapsack:
 
 class KnapsackProblem:
 
+    penalty_magnitude = 1
+
     def __init__(self, maximum_weight, num_items, population_size, num_generations):
         self.maximum_weight = maximum_weight
         self.num_items = num_items
@@ -109,14 +111,14 @@ class KnapsackProblem:
             penalty_idx = KnapsackProblem.get_idx_max(ratios)
             penalty = knapsack.values[penalty_idx]
             # multiply by ratio to strengthen the effect of penalty
-            score -= penalty*round(ratios[penalty_idx])
+            score -= KnapsackProblem.penalty_magnitude * penalty
             total_weight_in_knapsack -= knapsack.weights[penalty_idx]
             ratios[penalty_idx] = 0
 
         return score
 
     @staticmethod
-    def get_idx_max(self, ratios):
+    def get_idx_max(ratios):
         """ Finds an index of an item in the knapsack with the highest weight/value ratio
             (meaning that the item is the least useful)
         """
@@ -128,11 +130,10 @@ class KnapsackProblem:
                 max_idx = i
         return max_idx
 
-
     @staticmethod
     def count_ratios(knapsack):
         """ Counts weight/value ratios of each item in the knapsack"""
-        ratios = [0]*(len(knapsack))
+        ratios = [0] * (len(knapsack))
         for i in range(len(knapsack.representation)):
             if knapsack.representation[i] == 1:
                 ratios[i] = knapsack.weights[i] / knapsack.values[i]
@@ -143,7 +144,9 @@ class KnapsackProblem:
         best_knapsack = genetic_algo.evolve(50)
         print(genetic_algo.scores)
         print(f"Best score: {genetic_algo.best_score}")
-        print(f"Best knapsack\nweight: {round(best_knapsack.get_total_weight())}\nvalue: {best_knapsack.get_total_value()}")
+        print(
+            f"Best knapsack\nweight: {round(best_knapsack.get_total_weight())}"
+            f"\nvalue: {best_knapsack.get_total_value()}")
 
 
 if __name__ == "__main__":
@@ -151,4 +154,5 @@ if __name__ == "__main__":
                                        num_items=100,
                                        population_size=100,
                                        num_generations=50)
+    knapsack_problem.penalty_magnitude = 2
     knapsack_problem.solve()
