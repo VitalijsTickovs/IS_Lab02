@@ -13,6 +13,8 @@ class EvolutionaryAlgorithm:
 
         self.crossover_probability = 1
         self.mutation_probability = 1
+        self.custom_crossover = None
+        self.custom_mutation = None
 
     def evolve(self, generations):
         for iteration in range(generations):
@@ -73,6 +75,9 @@ class EvolutionaryAlgorithm:
         if not self.random_check(self.crossover_probability):
             return parent1, parent2
 
+        if not self.custom_crossover is None:
+            return self.custom_crossover(parent1, parent2)
+
         if type == 'one_point':
             return self.one_point_crossover(parent1, parent2)
 
@@ -84,6 +89,13 @@ class EvolutionaryAlgorithm:
     def mutation_function(self, child):
         if not self.random_check(self.mutation_probability):
             return child
+        if not self.custom_mutation is None:
+            return self.custom_mutation(child)
+        else:
+            return self.classic_mutation(child)
+
+    @staticmethod
+    def classic_mutation(child):
         bit = random.randrange(start=0, stop=len(child) - 1)
         if child[bit] == 1:
             child[bit] = 0
