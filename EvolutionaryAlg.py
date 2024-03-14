@@ -5,12 +5,17 @@ import numpy as np
 
 class EvolutionaryAlgorithm:
 
-    def __init__(self, population, fitness_function):
+    def __init__(self, population, fitness_function, maximization = True):
         self.population = population
         self.fitness_function = fitness_function
         self.scores = []
-        self.best_score = 0
 
+        self.maximization = maximization # True - maximization, False - minimization
+        if maximization:
+            self.best_score = float("-inf")
+        else:
+            self.best_score = float("inf")
+        self.best_individual = self.population[0]
         self.crossover_probability = 1
         self.mutation_probability = 1
         self.custom_crossover = None
@@ -31,9 +36,21 @@ class EvolutionaryAlgorithm:
                     next_generation.append(children[j])
 
             self.population = next_generation
-            self.scores.append((iteration, max(fitness_scores)))
-            self.best_score = max(max(fitness_scores), self.best_score)
-            print(f"Iteration {iteration}: Best Fitness: {max(fitness_scores)}")
+            strongest_candidate = self.get_best_individual(self.population) # in the current generation
+            percentage_zero = (len(fitness_scores)-np.count_nonzero(np.array(fitness_scores)))/len(fitness_scores)
+            self.scores.append((iteration, min(fitness_scores),
+                                sum(fitness_scores)/len(fitness_scores),
+                                max(fitness_scores),
+                                percentage_zero,
+                                strongest_candidate))
+            if self. maximization:
+                self.best_score = max(max(fitness_scores), self.best_score)
+            else:
+                self.best_score = min(min(fitness_scores), self.best_score)
+            self.best_individual = self.get_best_individual(self.population + [self.best_individual])
+            # print(f"Iteration {iteration}: Max Fitness: {round(max(fitness_scores))}, "
+            #       f"Avg Fitness: {round(sum(fitness_scores)/len(fitness_scores))}, "
+            #       f"Min Fitness: {round(min(fitness_scores))}")
 
         return self.get_best_individual(self.population)
 
@@ -60,14 +77,21 @@ class EvolutionaryAlgorithm:
     def roulette_wheel(self, fitness_scores):
         weights = []
         total_score = np.sum(fitness_scores)
+        if total_score == 0:
+            return random.choices(range(len(fitness_scores)), k=2)
         for score in fitness_scores:
             weights.append(score / total_score)
+        if not self.maximization:
+            weights = [1-w for w in weights]
         return random.choices(range(len(fitness_scores)), weights=weights, k=2)
 
     def get_best_individual(self, candidates):
         if candidates is None:
             candidates = self.population
-        best_individual = max(candidates, key=self.fitness_function)
+        if self.maximization:
+            best_individual = max(candidates, key=self.fitness_function)
+        else:
+            best_individual = min(candidates, key=self.fitness_function)
 
         return best_individual
 
