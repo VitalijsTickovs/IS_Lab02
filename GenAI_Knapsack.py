@@ -153,7 +153,7 @@ class KnapsackProblem:
     def solve(self):
         self.reassign_penalties()
         genetic_algo = EvolutionaryAlgorithm(population=self.population, fitness_function=self.fitness_function)
-        best_knapsack = genetic_algo.evolve(self.num_generations)
+        genetic_algo.evolve(self.num_generations)
         # print(genetic_algo.scores)
         # print(f"Best score: {genetic_algo.best_score}")
         # print(
@@ -162,7 +162,7 @@ class KnapsackProblem:
         #     f"\nknapsack: {best_knapsack.representation}")
         # print(f"values: {self.values}")
         # print(f"weights: {self.weights}")
-        return genetic_algo.scores, best_knapsack
+        return genetic_algo.scores, genetic_algo.best_individual
 
     def solve_to_optimality(self):
         n = len(self.values)
@@ -189,7 +189,6 @@ class KnapsackProblem:
 
         return max_value, best_combination
 
-
 def find_optimal_penalty(kp, penalties):
     problem_stats = []
     i = 1
@@ -198,18 +197,24 @@ def find_optimal_penalty(kp, penalties):
         kp.penalty_factor = penalty
         scores, best_candidate = kp.solve()
         legal = True
+        last_candidate = scores[-1][-1]
         if best_candidate.get_total_weight() > kp.maximum_weight:
             legal = False
+
         problem_stats.append(
             [round(penalty,2)] + list([round(x,2) for x in scores[-1][1:-1]]) +
-            [round(best_candidate.get_total_weight(),2),
-             round(best_candidate.get_total_value(),2), legal])
+            [round(last_candidate.get_total_weight(), 2),
+             round(last_candidate.get_total_value(), 2),
+             round(best_candidate.get_total_weight(),2),
+             round(best_candidate.get_total_value(),2),
+             legal])
         # print(f'Best: {scores[-1][3]}, Average:  {scores[-1][2]}, Worst: {scores[-1][1]}')
         print(i,'/', len(penalties))
         i+=1
 
-    stats_df = pd.DataFrame(problem_stats, columns=['penalty_factor', 'min', 'average', 'max', 'proportion_zero_fitness','best_candidate_weight',
-                                                    'best_candidate_value', 'legal'])
+    stats_df = pd.DataFrame(problem_stats, columns=['penalty_factor', 'min', 'average', 'max', 'proportion_zero_fitness',
+                                                    'last_candidate_weight', 'last_candidate_value', 'best_candidate_weight',
+                                                    'best_candidate_value', 'best_candidate_solution_legal'])
     stats_df.to_csv(f'experiments/knapsack_maxweight-{kp.maximum_weight}_numitems-{kp.num_items}.csv', index=False)
 
 
@@ -218,10 +223,11 @@ def track_fitness_over_generations(kp):
     scores, best_candidate = kp.solve()
     value = best_candidate.get_total_value()
     weight = round(best_candidate.get_total_weight(),2)
+    bi = best_candidate
 
-    stats = [list(x[:-1])+[round(x[-1].get_total_weight(),2),
-                           round(x[-1].get_total_value(),2),
-                           x[-1].get_total_weight() <= x[-1].maximum_weight]
+    stats = [list(x[:-1])+[round(bi.get_total_weight(),2),
+                           round(bi.get_total_value(),2),
+                           bi.get_total_weight() <= bi.maximum_weight]
              for x in scores]
 
     stats_df = pd.DataFrame(stats, columns=['generation_number', 'min', 'average', 'max',
@@ -249,7 +255,10 @@ if __name__ == "__main__":
 
     penalties = np.linspace(1, max_penalty, num=50)
     find_optimal_penalty(knapsack_problem, penalties)
-    # track_fitness_over_generations(knapsack_problem)
+    # for p in [5,10,15]:
+    #     knapsack_problem.penalty_factor = p
+    #     track_fitness_over_generations(knapsack_problem)
+
     # optimal = knapsack_problem.solve_to_optimality()
     # print('Optimal: ',optimal)
     # print(knapsack_problem.values, knapsack_problem.weights)
