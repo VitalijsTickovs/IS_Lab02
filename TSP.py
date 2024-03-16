@@ -1,6 +1,7 @@
 import math
 import random as r
 import numpy as np
+import pandas as pd
 
 from EvolutionaryAlg import EvolutionaryAlgorithm
 
@@ -15,8 +16,7 @@ class CityPath:
         distance = 0
         for i in range(len(self.path) - 1):
             distance += self.distance_matrix[self.path[i] - 1][self.path[i + 1] - 1]
-
-        distance += self.distance_matrix[self.path[-1] - 1][self.path[0]-1]
+        distance += self.distance_matrix[self.path[-1] - 1][self.path[0] - 1]
 
         return distance
 
@@ -33,6 +33,8 @@ class TSP:
         self.locations = self.generate_locations()
         self.distance_matrix = self.build_distance_matrix()
         self.population = self.generate_population()
+        self.mutation_probability = 1
+        self.selection_type = None
 
     def generate_population(self):
         population = []
@@ -126,36 +128,127 @@ class TSP:
         child.path = child_p
         return child
 
-    def solve(self):
-        genetic_algo = EvolutionaryAlgorithm(population=self.population, fitness_function=self.fitness_function, maximization=False)
+    def solve(self, silenced=True):
+        genetic_algo = EvolutionaryAlgorithm(population=self.population, fitness_function=self.fitness_function,
+                                             maximization=False)
+        genetic_algo.mutation_probability = self.mutation_probability
+        if self.selection_type is not None:
+            genetic_algo.selection_type = self.selection_type
         genetic_algo.custom_crossover = TSP.partially_mapped_crossover
         genetic_algo.custom_mutation = TSP.swap_mutation
-        best_path = genetic_algo.evolve(self.num_generations)
-        print(f"Best score: {genetic_algo.best_score}")
-        print(
-            f"Best CityPath \ndistance: {round(best_path.get_path_distance(),2)}"
-            f"\nbest_path.path: {best_path.path}")
-        print([self.locations[i-1] for i in best_path.path])
+        genetic_algo.evolve(self.num_generations, 1000)
+        best_path = genetic_algo.best_individual
+        if not silenced:
+            print(f"Best score: {round(genetic_algo.best_score, 2)}")
+            print(
+                f"Best CityPath \ndistance: {round(best_path.get_path_distance(), 2)}"
+                f"\nbest_path.path: {best_path.path}")
+            print([self.locations[i - 1] for i in best_path.path])
 
+            optimal_distance = self.get_optimal_path_distance()
+            print(f"Optimal path: {round(optimal_distance, 2)}")
+        return genetic_algo.scores, genetic_algo.best_individual
+
+    def get_optimal_path_distance(self):
         optimal_distance = 0
         for i in range(len(self.locations) - 1):
-            optimal_distance += self.distance_matrix[i][i+1]
+            optimal_distance += self.distance_matrix[i][i + 1]
         optimal_distance += self.distance_matrix[-1][0]
-        print(f"Optimal path: {optimal_distance}")
+        return optimal_distance
+
+
+def run_tsp_n_times(tsp, n, initial_populations):
+    best_values = []
+    optimal_count = 0
+    optimal_distance = round(tsp.get_optimal_path_distance(), 2)
+    for j in range(n):
+        tsp.population = initial_populations[j]
+        _, best_candidate = tsp.solve()
+        best_score = best_candidate.get_path_distance()
+        best_values.append(best_score)
+        if abs(best_score - optimal_distance) < 0.00001:
+            optimal_count += 1
+        print('-- ', j + 1, '/', n)
+
+    min_avg_max = [
+        round(max(best_values), 2),
+        round(min(best_values), 2),
+        round(sum(best_values) / len(best_values), 2)
+    ]
+
+    return min_avg_max, optimal_count, optimal_distance
+
+
+def find_optimal_selection(tsp, strategies):
+    num_runs = 10
+    problem_stats = []
+    i = 1
+    problem_parameters = generate_problem_parameters(tsp, 10)
+    for s in strategies:
+        print('Crossover: ' + s.upper())
+        tsp.selection_type = s
+        mam, o_count, o_distance = run_tsp_n_times(tsp, num_runs, problem_parameters)
+        problem_stats.append(
+            [s] + mam + [o_count, o_distance])  # strategy, min, avg, max, optimal count, optimal distance
+        # print(f'Best: {min_value}, Average:  {avg_value}, Worst: {max_value}')
+        print(i, '/', len(strategies))
+        i += 1
+
+    stats_df = pd.DataFrame(problem_stats,
+                            columns=['selection_strategy', 'min', 'average', 'max',
+                                     'optimal_reached', 'optimal'])
+    stats_df.to_csv(f'experiments/tsp_numcities-{tsp.num_cities}.csv', index=False)
+
+
+def tune_mutation_rate(tsp, mutation_probabilities):
+    num_runs = 10
+    problem_stats = []
+    i = 1
+    problem_parameters = generate_problem_parameters(tsp, num_runs)
+    for mp in mutation_probabilities:
+        tsp.mutation_probability = mp
+        mam, o_count, o_distance = run_tsp_n_times(tsp, num_runs, problem_parameters)
+
+        # strategy, min, avg, max, optimal count, optimal distance
+        problem_stats.append([round(mp, 2)] + mam + [o_count, o_distance])
+
+        # print(f'Best: {min_value}, Average:  {avg_value}, Worst: {max_value}')
+        print(i, '/', len(mutation_probabilities))
+        i += 1
+
+    stats_df = pd.DataFrame(problem_stats,
+                            columns=['mutation_probability', 'min',
+                                     'average', 'max','optimal_reached','optimal_distance'])
+    stats_df.to_csv(f'experiments/mutations_probs_tuning__tsp_numcities-{tsp.num_cities}.csv', index=False)
+
+
+def generate_problem_parameters(tsp, num_retries):
+    problem_parameters = []
+    for _ in range(num_retries):
+        problem_parameters.append(
+            tsp.generate_population()
+        )
+    return problem_parameters
 
 
 if __name__ == "__main__":
     r.seed(42)
 
     # parameters
-    num_cities = 100
-    population_size = 1000
-    num_generations = 1000
+    num_cities = 20
+    population_size = 100
+    num_generations = 200
+    selection_type = "tournament"
 
     tsp = TSP(num_cities=num_cities, population_size=population_size, num_generations=num_generations)
+    tsp.selection_type = selection_type
+    tsp.mutation_probability = 0.1
 
     # run
-    tsp.solve()
+    # tsp.solve(False)
+    # find_optimal_selection(tsp, ['roulette', 'tournament', 'rank', 'exp_rank'])
+    mutation_probabilities = np.linspace(0, 1, num=10)
+    tune_mutation_rate(tsp, mutation_probabilities)
 
     # tests
     # print(tsp.locations)
@@ -177,4 +270,4 @@ if __name__ == "__main__":
     # print(f'c2: {c2.path}')
     # print(tsp.swap_mutation(child).path)
 
-
+    # generate_problem_parameters(tsp, 10)
