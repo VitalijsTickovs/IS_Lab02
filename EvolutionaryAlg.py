@@ -21,7 +21,10 @@ class EvolutionaryAlgorithm:
         self.custom_crossover = None
         self.custom_mutation = None
 
-    def evolve(self, generations):
+        # available: ['roulette', 'tournament', 'exp_rank']
+        self.selection_type = 'roulette'
+
+    def evolve(self, generations, print_delay=100):
         for iteration in range(generations):
             fitness_scores = [self.fitness_function(candidate) for candidate in self.population]
             next_generation = []
@@ -48,31 +51,44 @@ class EvolutionaryAlgorithm:
             else:
                 self.best_score = min(min(fitness_scores), self.best_score)
             self.best_individual = self.get_best_individual(self.population + [self.best_individual])
-            # print(f"Iteration {iteration}: Max Fitness: {round(max(fitness_scores))}, "
-            #       f"Avg Fitness: {round(sum(fitness_scores)/len(fitness_scores))}, "
-            #       f"Min Fitness: {round(min(fitness_scores))}")
+            if iteration % print_delay == 0:
+                print(f"Iteration {iteration}: Max Fitness: {round(max(fitness_scores),2)}, "
+                      f"Avg Fitness: {round(sum(fitness_scores)/len(fitness_scores),2)}, "
+                      f"Min Fitness: {round(min(fitness_scores),2)}, "
+                      f"Best score so far: {round(self.best_score, 2)}")
 
         return self.get_best_individual(self.population)
 
-    def selection_function(self, type='roulette'):
+    def selection_function(self):
+        """
+        Performs selection process on the population and returns the indices of the individuals
+        which are chosen to be parents for the next generation
+        """
+
         fitness_scores = [self.fitness_function(candidate) for candidate in self.population]
-        if type == 'roulette':
+        if self.selection_type == 'roulette':
             return self.roulette_wheel(fitness_scores)
-        elif type == 'tournament':
+        elif self.selection_type == 'tournament':
             return self.tournament_selection()
+        elif self.selection_type == 'exp_rank':
+            return self.exp_rank_selection()
+        elif self.selection_type == 'rank':
+            return self.rank_selection()
 
     def tournament_selection(self, tournament_size=5):
         selected_parents = []
-        parents_pool = self.population
+        parents_pool = [x for x in self.population]
         population_size = len(parents_pool)
 
         for _ in range(2):
             tournament_candidates = random.sample(parents_pool, min(tournament_size, population_size))
             selected_parent = self.get_best_individual(tournament_candidates)
             selected_parents.append(selected_parent)
-            selected_parent.remove(selected_parent)
+            parents_pool.remove(selected_parent)
 
-        return selected_parents
+        parents_ids = [self.population.index(selected_parent) for selected_parent in selected_parents]
+
+        return parents_ids
 
     def roulette_wheel(self, fitness_scores):
         weights = []
@@ -84,6 +100,34 @@ class EvolutionaryAlgorithm:
         if not self.maximization:
             weights = [1-w for w in weights]
         return random.choices(range(len(fitness_scores)), weights=weights, k=2)
+
+    def sort_population(self):
+        sorted_population = sorted(self.population, key=self.fitness_function, reverse=self.maximization)
+        return sorted_population
+
+    def exp_rank_selection(self, c = 0.1, k = 0.1):
+        """
+        Select 2 parents using an exponential rank selection
+        :param c: constant that determines the scale of selection probabilities
+        :param k: constant controlling the shape of the probability distribution
+        :return:
+        """
+        sorted_population = self.sort_population()
+        ranks = np.arange(1, len(sorted_population)+1)
+        probs = c * (1 - np.exp(-ranks/k))
+        selected_parents = random.choices(sorted_population, weights=probs, k=2)
+        parents_ids = [self.population.index(selected_parent) for selected_parent in selected_parents]
+        return parents_ids
+
+    def rank_selection(self):
+        sorted_population = self.sort_population()
+        total_rank = sum(range(1, len(self.population) + 1))
+        population_size = (len(self.population))
+        selection_probs = [(population_size - i) / total_rank for i in range(population_size)]
+        selected_parents = random.choices(sorted_population, weights=selection_probs, k=2)
+        parents_ids = [self.population.index(selected_parent) for selected_parent in selected_parents]
+        return parents_ids
+
 
     def get_best_individual(self, candidates):
         if candidates is None:
@@ -113,10 +157,13 @@ class EvolutionaryAlgorithm:
     def mutation_function(self, child):
         if not self.random_check(self.mutation_probability):
             return child
-        if not self.custom_mutation is None:
-            return self.custom_mutation(child)
-        else:
-            return self.classic_mutation(child)
+        num_mutations = int(len(child)/10)
+        for _ in range(num_mutations):
+            if not self.custom_mutation is None:
+                child = self.custom_mutation(child)
+            else:
+                child = self.classic_mutation(child)
+        return child
 
     @staticmethod
     def classic_mutation(child):
@@ -136,3 +183,4 @@ class EvolutionaryAlgorithm:
         if random_var <= threshold:
             return True
         return False
+
