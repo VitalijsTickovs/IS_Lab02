@@ -17,7 +17,7 @@ class EvolutionaryAlgorithm:
             self.best_score = float("inf")
         self.best_individual = self.population[0]
         self.crossover_probability = 1
-        self.mutation_probability = 1
+        self.mutation_probability = 0.1
         self.custom_crossover = None
         self.custom_mutation = None
 
@@ -41,7 +41,8 @@ class EvolutionaryAlgorithm:
             self.population = next_generation
             strongest_candidate = self.get_best_individual(self.population) # in the current generation
             percentage_zero = (len(fitness_scores)-np.count_nonzero(np.array(fitness_scores)))/len(fitness_scores)
-            self.scores.append((iteration, min(fitness_scores),
+            self.scores.append((iteration,
+                                min(fitness_scores),
                                 sum(fitness_scores)/len(fitness_scores),
                                 max(fitness_scores),
                                 percentage_zero,
@@ -52,7 +53,8 @@ class EvolutionaryAlgorithm:
                 self.best_score = min(min(fitness_scores), self.best_score)
             self.best_individual = self.get_best_individual(self.population + [self.best_individual])
             if iteration % print_delay == 0:
-                print(f"Iteration {iteration}: Max Fitness: {round(max(fitness_scores),2)}, "
+                print(f"Iteration {iteration}: "
+                      f"Max Fitness: {round(max(fitness_scores),2)}, "
                       f"Avg Fitness: {round(sum(fitness_scores)/len(fitness_scores),2)}, "
                       f"Min Fitness: {round(min(fitness_scores),2)}, "
                       f"Best score so far: {round(self.best_score, 2)}")

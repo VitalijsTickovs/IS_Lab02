@@ -170,13 +170,13 @@ def run_tsp_n_times(tsp, n, initial_populations):
             optimal_count += 1
         print('-- ', j + 1, '/', n)
 
-    min_avg_max = [
+    max_avg_min = [
         round(max(best_values), 2),
-        round(min(best_values), 2),
-        round(sum(best_values) / len(best_values), 2)
+        round(sum(best_values) / len(best_values), 2),
+        round(min(best_values), 2)
     ]
 
-    return min_avg_max, optimal_count, optimal_distance
+    return max_avg_min, optimal_count, optimal_distance
 
 
 def find_optimal_selection(tsp, strategies):
@@ -195,7 +195,7 @@ def find_optimal_selection(tsp, strategies):
         i += 1
 
     stats_df = pd.DataFrame(problem_stats,
-                            columns=['selection_strategy', 'min', 'average', 'max',
+                            columns=['selection_strategy', 'max', 'average', 'min',
                                      'optimal_reached', 'optimal'])
     stats_df.to_csv(f'experiments/tsp_numcities-{tsp.num_cities}.csv', index=False)
 
@@ -217,8 +217,8 @@ def tune_mutation_rate(tsp, mutation_probabilities):
         i += 1
 
     stats_df = pd.DataFrame(problem_stats,
-                            columns=['mutation_probability', 'min',
-                                     'average', 'max','optimal_reached','optimal_distance'])
+                            columns=['mutation_probability', 'max',
+                                     'average', 'min','optimal_reached','optimal_distance'])
     stats_df.to_csv(f'experiments/mutations_probs_tuning__tsp_numcities-{tsp.num_cities}.csv', index=False)
 
 
@@ -235,7 +235,7 @@ if __name__ == "__main__":
     r.seed(42)
 
     # parameters
-    num_cities = 20
+    num_cities = 50
     population_size = 100
     num_generations = 200
     selection_type = "tournament"
@@ -246,9 +246,9 @@ if __name__ == "__main__":
 
     # run
     # tsp.solve(False)
-    # find_optimal_selection(tsp, ['roulette', 'tournament', 'rank', 'exp_rank'])
-    mutation_probabilities = np.linspace(0, 1, num=10)
-    tune_mutation_rate(tsp, mutation_probabilities)
+    find_optimal_selection(tsp, ['roulette', 'tournament', 'rank', 'exp_rank'])
+    # mutation_probabilities = np.linspace(0, 1, num=10)
+    # tune_mutation_rate(tsp, mutation_probabilities)
 
     # tests
     # print(tsp.locations)
