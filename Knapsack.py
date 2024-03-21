@@ -2,6 +2,7 @@ import random
 import math
 
 import numpy as np
+import pulp
 import pandas as pd
 
 from EvolutionaryAlg import EvolutionaryAlgorithm
@@ -191,6 +192,31 @@ class KnapsackProblem:
 
         return max_value, best_combination
 
+    def solve_to_optimality(self):
+        # Create a binary optimization problem
+        prob = pulp.LpProblem("Knapsack Problem", pulp.LpMaximize)
+
+        # Decision variables
+        x = [pulp.LpVariable(f'x{i}', cat=pulp.LpBinary) for i in range(len(self.values))]
+
+        # Objective function: maximize total value
+        prob += pulp.lpSum([self.values[i] * x[i] for i in range(len(self.values))])
+
+        # Constraint: total weight should not exceed capacity
+        prob += pulp.lpSum([self.weights[i] * x[i] for i in range(len(self.values))]) <= self.maximum_weight
+
+        # Solve the problem
+        prob.solve()
+
+        # Extract solution
+        selected_items = [i for i in range(len(self.values)) if x[i].value() == 1]
+        total_value = sum([self.values[i] for i in selected_items])
+        total_weight = sum([self.weights[i] for i in selected_items])
+        print(selected_items)
+        print(total_value, total_weight)
+
+        return selected_items, total_value, total_weight
+
 
 def find_optimal_penalty(kp, penalties):
     problem_stats = []
@@ -204,13 +230,13 @@ def find_optimal_penalty(kp, penalties):
         if best_candidate.get_total_weight() > kp.maximum_weight:
             legal = False
 
-        fitness_scores = [s[2] for s in scores]
+        min_scores, avg_scores, max_scores = [s[1] for s in scores], [s[2] for s in scores], [s[3] for s in scores]
 
         problem_stats.append(
             [round(penalty, 2)] + [round(x, 2) for x in
-                                   (min(fitness_scores),
-                                    sum(fitness_scores) / len(fitness_scores),
-                                    max(fitness_scores))
+                                   (min(min_scores),
+                                    sum(avg_scores) / len(avg_scores),
+                                    max(max_scores))
                                    ] +
             [round(last_candidate.get_total_weight(), 2),
              round(last_candidate.get_total_value(), 2),
@@ -298,10 +324,10 @@ if __name__ == "__main__":
     random.seed(42)
 
     # parameters
-    penalty_factor = 10
-    max_weight = 20
-    num_items = 10
-    population_size = 10
+    penalty_factor = 50
+    max_weight = 200
+    num_items = 100
+    population_size = 100
     num_generations = 50
     max_penalty = int(max_weight / 2)
     mutation_probability = 0.1
@@ -311,20 +337,21 @@ if __name__ == "__main__":
                                        population_size=population_size,
                                        num_generations=num_generations,
                                        penalty_factor=penalty_factor)
+
     knapsack_problem.mutation_probability = mutation_probability
 
-    penalties = np.linspace(1, max_penalty, num=50)
+    # penalties = np.linspace(1, max_penalty, num=10)
 
     # mutations
-    # mutation_probabilities = np.linspace(0, 1, num=10)
-    # tune_mutation_rate(knapsack_problem, mutation_probabilities)
+    mutation_probabilities = np.linspace(0, 1, num=10)
+    tune_mutation_rate(knapsack_problem, mutation_probabilities)
 
     # penalties
-    find_optimal_penalty(knapsack_problem, penalties)
+    # find_optimal_penalty(knapsack_problem, penalties)
     # for p in [5,10,15]:
     #     knapsack_problem.penalty_factor = p
     #     track_fitness_over_generations(knapsack_problem)
 
-    optimal = knapsack_problem.solve_to_optimality()
-    print('Optimal: ', optimal)
+    # optimal = knapsack_problem.solve_to_optimality()
+    # print('Optimal: ', optimal)
     # print(knapsack_problem.values, knapsack_problem.weights)

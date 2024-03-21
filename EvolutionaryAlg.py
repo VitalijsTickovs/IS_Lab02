@@ -68,8 +68,8 @@ class EvolutionaryAlgorithm:
         """
 
         fitness_scores = [self.fitness_function(candidate) for candidate in self.population]
-        if self.selection_type == 'roulette':
-            return self.roulette_wheel(fitness_scores)
+        if self.selection_type == 'proportional':
+            return self.proportional_selection(fitness_scores)
         elif self.selection_type == 'tournament':
             return self.tournament_selection()
         elif self.selection_type == 'exp_rank':
@@ -92,7 +92,7 @@ class EvolutionaryAlgorithm:
 
         return parents_ids
 
-    def roulette_wheel(self, fitness_scores):
+    def proportional_selection(self, fitness_scores):
         weights = []
         total_score = np.sum(fitness_scores)
         if total_score == 0:

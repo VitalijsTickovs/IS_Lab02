@@ -24,9 +24,9 @@ Knapsack and TSP contain additional methods to perform various tests with parame
 ## Sources
 ### ChatGPT
 We used ChatGPT to generate a skeleton of the generic evolutionary 
-algorithm without implementation of crossover, mutatation, 
+algorithm without implementation of crossover, mutation, 
 selection, and fitness functions. Also, we used ChatGPT to create a function which solves
-0/1 Knapsack problem to optimality using pure brute-force. The rest of usage included 
+0/1 Knapsack problem to optimality using integer linear programming. The rest of usage included 
 consulting with the LLM about ideas for the most suitable crossover and selection functions
 to solve TSP with an evolutionary algorithm.
 

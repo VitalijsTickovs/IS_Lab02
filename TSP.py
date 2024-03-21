@@ -235,10 +235,10 @@ if __name__ == "__main__":
     r.seed(42)
 
     # parameters
-    num_cities = 50
+    num_cities = 20
     population_size = 100
-    num_generations = 200
-    selection_type = "tournament"
+    num_generations = 100
+    selection_type = "rank"
 
     tsp = TSP(num_cities=num_cities, population_size=population_size, num_generations=num_generations)
     tsp.selection_type = selection_type
@@ -246,9 +246,11 @@ if __name__ == "__main__":
 
     # run
     # tsp.solve(False)
-    find_optimal_selection(tsp, ['roulette', 'tournament', 'rank', 'exp_rank'])
-    # mutation_probabilities = np.linspace(0, 1, num=10)
-    # tune_mutation_rate(tsp, mutation_probabilities)
+    # find_optimal_selection(tsp, ['proportional', 'tournament', 'rank', 'exp_rank'])
+
+    # mutation
+    mutation_probabilities = np.linspace(0, 1, num=11)
+    tune_mutation_rate(tsp, mutation_probabilities)
 
     # tests
     # print(tsp.locations)
